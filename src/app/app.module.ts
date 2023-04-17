@@ -15,6 +15,7 @@ import { postsReducer } from './posts/posts-list/state/posts.reducer';
 import { appReducer } from './store/app.state';
 import { EffectsModule } from '@ngrx/effects';
 import { LoadingSpinnerComponent } from './shared/components/loading-spinner/loading-spinner.component';
+import { AuthEffects } from './auth/state/auth.effects';
 
 @NgModule({
   declarations: [
@@ -33,7 +34,7 @@ import { LoadingSpinnerComponent } from './shared/components/loading-spinner/loa
       logOnly: false,
     }),
     ReactiveFormsModule,
-    EffectsModule.forRoot([]),
+    EffectsModule.forRoot([AuthEffects]),
     HttpClientModule
   ],
   providers: [],

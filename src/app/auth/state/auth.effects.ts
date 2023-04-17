@@ -3,11 +3,11 @@ import { Router } from "@angular/router";
 import {Actions, createEffect, ofType} from '@ngrx/effects';
 import { Store } from "@ngrx/store";
 
-import { catchError, exhaustMap, map, of, tap } from "rxjs";
+import { catchError, exhaustMap, map, mergeMap, of, tap } from "rxjs";
 import { AuthService } from "src/app/services/auth.service";
 import { AppState } from "src/app/store/app.state";
 import { setErrorMessage, setLoadingSpinner } from "src/app/store/shared/shared.actions";
-import { loginStart, loginSuccess } from "./auth.actions";
+import { auto_login, loginStart, loginSuccess, startSignup, successSignup } from "./auth.actions";
 
 
 @Injectable()
@@ -28,6 +28,7 @@ export class AuthEffects{
 
         this.store.dispatch(setLoadingSpinner({status: false}))
         const user = this.authService.formatUser(data)
+        this.authService.setUserInLocalStorage(user);
         return loginSuccess({ user });
      }),
      catchError((errResp) => {
@@ -47,5 +48,45 @@ export class AuthEffects{
             this.router.navigate(['/'])
         })
         )
+    }, {dispatch: false})
+
+    signUpRedirected$ = createEffect(
+        () => {
+        return this.actions$.pipe(
+            ofType(successSignup), 
+            tap((action) => {
+                this.store.dispatch(setErrorMessage({ message: ''}))
+            this.router.navigate(['/'])
+        })
+        )
+    }, {dispatch: false})
+
+
+    signUp$ = createEffect((): any => {
+      return this.actions$.pipe(ofType(startSignup),
+      exhaustMap((action) => {
+        return this.authService.signUp(action.email, action.password).pipe(map((data) => {
+            this.store.dispatch(setLoadingSpinner({ status: false}));
+            const user = this.authService.formatUser(data);
+            this.authService.setUserInLocalStorage(user);
+            return successSignup({user});
+        }),catchError((errMessage) => {
+            this.store.dispatch(setLoadingSpinner({status: false}))
+            console.log(errMessage.error.error.message);
+            const errorMessage = this.authService.getErrorMessage(errMessage.error.error.message);
+         return of(setErrorMessage({message: errorMessage}));
+        })
+        );
+      })
+
+    )})
+
+
+    autoLogin$ = createEffect((): any => {
+      return this.actions$.pipe(ofType(auto_login), 
+      map((action) => {  
+        const user = this.authService.getUserFromLocalStorage();
+        console.log(user)
+      } ))
     }, {dispatch: false})
 }
