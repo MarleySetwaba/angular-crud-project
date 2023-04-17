@@ -4,6 +4,9 @@ import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 import { AuthResponseData } from "../models/authResponseData.model";
 import { User } from "../models/user.model";
+import { Store } from "@ngrx/store";
+import { AppState } from "../store/app.state";
+import { auto_logout } from "../auth/state/auth.actions";
 
 
 @Injectable({
@@ -12,7 +15,7 @@ import { User } from "../models/user.model";
 
 export class AuthService {
     timeoutInterval: any;
-constructor(private http: HttpClient){}
+constructor(private http: HttpClient, private store: Store<AppState>){}
 
 login(email: string, password: string): Observable<AuthResponseData> {
     return this.http.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBV0JHlxKYM0hqsVmRb48gYRG1vakXmsU0', {email, password, returnSecureToken: true})
@@ -63,6 +66,7 @@ runTimeOutInterval(user: User){
 
     this.timeoutInterval = setTimeout(() => {
         //Logout Functionality or get refresh token
+        this.store.dispatch(auto_logout());
     }, timeInterval)
 }
 
@@ -70,6 +74,16 @@ setUserInLocalStorage(user: User) {
     localStorage.setItem('userData', JSON.stringify(user));
 
     this.runTimeOutInterval(user)
+}
+
+logout(){
+   localStorage.removeItem('userData');
+   if(this.timeoutInterval)
+   {
+    clearTimeout(this.timeoutInterval);
+    this.timeoutInterval = null;
+   }
+     
 }
 }
 
